@@ -1,0 +1,184 @@
+---
+title: "Result and Discussion"
+author: "Group 09"
+date: "2024-07-27"
+output: word_document
+---
+
+```{r}
+library(ggplot2)
+#Import the data set 
+car_df <- read.csv("C:/Users/ASUS/Desktop/Group_project_09/Group_project_09/Car_price_predictor.csv")
+head(car_df)
+ 
+car_df2 <- data.frame(car_df)
+sum(is.na(car_df))
+
+str(car_df)
+
+car_df2$fueltype<-as.factor(car_df2$fueltype)
+car_df2$doornumber<-as.factor(car_df2$doornumber)
+car_df2$carbody<-as.factor(car_df2$carbody)
+car_df2$curbweight<-as.numeric(car_df2$curbweight)
+car_df2$enginetype<-as.factor(car_df2$enginetype)
+car_df2$horsepower<-as.numeric(car_df2$horsepower)
+
+str(car_df2)
+
+```
+```{r}
+model1<-lm(price ~ fueltype + doornumber + carbody + curbweight + enginetype + horsepower + AvgFuelConsumption ,data=car_df2)
+summary(model1)
+```
+```{r}
+stepwise_model<-step(model1,direction="backward")
+summary(stepwise_model)
+```
+
+
+```{r}
+new_car_df<-data.frame(car_df2[,-c(1,2,3)])
+head(new_car_df)
+```
+
+```{r}
+# Load the leaps package
+#install.packages("leaps")
+library(leaps)
+
+# Fit the model using regsubsets
+fit <- regsubsets(price ~ fueltype+doornumber+carbody+enginetype+curbweight+horsepower+AvgFuelConsumption, data = car_df2)
+
+# Get the summary of the model
+summary_fit <- summary(fit)
+
+# View which predictors are selected for each subset size
+#summary_fit$which
+
+# View the Adjusted R-Squared for each model
+summary_fit$adjr2
+summary_fit$rss
+summary_fit$cp
+summary_fit$bic
+
+# Plot the model selection criteria (e.g., BIC, Adjusted R-Squared)
+plot(fit, scale = "bic")
+plot(fit, scale = "Cp")
+```
+
+```{r}
+par(mfrow = c(1, 2)) 
+plot(summary_fit$rss, xlab = "Number of Variables", ylab = "RSS", type = "l") 
+RSs.min<-which.min(summary_fit$rss) 
+points(RSs.min,summary_fit$rss[RSs.min],col="blue",cex = 2, pch = 20) 
+abline(v=RSs.min)
+
+plot(summary_fit$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", 
+type = "l") 
+
+adjr2.max <- which.max(summary_fit$adjr2) 
+points(adjr2.max, summary_fit$adjr2[adjr2.max], col = "red", cex = 2, pch = 
+20) 
+abline(v=adjr2.max)
+```
+
+```{r}
+par(mfrow = c(1, 2)) 
+plot(summary_fit$cp, xlab = "Number of Variables", ylab = "Cp", type = "l") 
+cp.min <- which.min(summary_fit$cp) 
+points(cp.min, summary_fit$cp[cp.min], col = "red", cex = 2, pch = 20) 
+
+bic.min <- which.min(summary_fit$bic) 
+plot(summary_fit$bic, xlab = "Number of Variables", ylab = "BIC", type = "l") 
+points(bic.min, summary_fit$bic[bic.min], col = "red", cex = 2, pch = 20)
+```
+
+```{r}
+data.frame( 
+Adj.R2 = (summary_fit$adjr2), 
+CP = (summary_fit$cp), 
+BIC = (summary_fit$bic), 
+RSS= (summary_fit$rss)
+)
+```
+
+```{r}
+model3 <- lm(price ~ ., data = new_car_df)
+summary(model3)
+
+#Residual vs Fitted - Check const variance
+plot(model3,which = 1, col = c("blue"))
+
+#Q-Q plot - Normality of residuals check
+plot(model3, which = 2, col = c("red"))
+
+#Scale- Location
+plot(model3,which = 3, col = c("green"))
+
+plot(model3$residuals,main = "residuals vs Run order",xlab ="Run order", ylab = "residuals")
+
+```
+
+```{r}
+
+summary01 <- summary(car_df2$curbweight) 
+summary02 <- summary(car_df2$horsepower) 
+summary03 <- summary(car_df2$AvgFuelConsumption) 
+summary04 <- summary(car_df2$price)
+
+
+
+S<-data.frame(cbind(summary01,summary02,summary03,summary04))
+names(S) <- c("Curb Weight" , "Horse power" , "Avg Fuel Consumption" , "Price")
+print(S)
+
+
+```
+
+
+
+
+
+```{r}
+#find outliers
+boxplot(car_df$curbweight , main = "Boxplot for curb weight")
+boxplot(car_df$horsepower , main = "Boxplot for horse power")
+boxplot(car_df$AvgFuelConsumption , main = "Boxplot for average fuel consumption")
+```
+
+```{r}
+##Descriptive analysis
+
+#Summary of the data set
+summary(new_car_df)
+
+#
+
+ ggplot( data = new_car_df,aes(curbweight , price)) +
+   geom_point()+
+   stat_smooth(method = lm)
+```
+```{r}
+ggplot( data = new_car,aes(horsepower , price)) +
+   geom_point()+
+   stat_smooth(method = lm)
+```
+```{r}
+ggplot( data = new_car,aes(AvgFuelConsumption , price)) +
+   geom_point()+
+   stat_smooth(method = lm)
+```
+
+```{r}
+pie(table(new_car$fueltype),col=c("green","red"))
+```
+```{r}
+pie(table(new_car$doornumber),col=c("green","red"))
+```
+```{r}
+pie(table(new_car$carbody),col=c("purple","yellow","blue","red","green"))
+```
+```{r}
+pie(table(new_car$enginetype),col=c("purple","yellow","blue","red","green","white"))
+```
+
